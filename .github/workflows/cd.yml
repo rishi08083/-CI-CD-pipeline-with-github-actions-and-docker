@@ -24,7 +24,7 @@ jobs:
 
       - name: Remove existing container
         run: |
-          docker rm myapp || echo "No container to remove"
+          docker rm myapp || echo "Noo container to remove"
 
       - name: Run new container
         run: |
