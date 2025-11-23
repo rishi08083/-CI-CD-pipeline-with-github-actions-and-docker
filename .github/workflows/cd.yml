@@ -15,33 +15,27 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Pull latest Docker image
-        shell: pwsh
-        run: |
+        shell: cmd
+        run: >
           docker pull ${{ secrets.DOCKER_USERNAME }}/devops-app:latest
 
       - name: Stop existing container
-        shell: pwsh
+        shell: cmd
         run: |
-          try {
-            docker stop myapp
-          } catch {
-            echo "No running container"
-          }
+          docker stop myapp
+          IF %ERRORLEVEL% NEQ 0 echo No running container
 
       - name: Remove existing container
-        shell: pwsh
+        shell: cmd
         run: |
-          try {
-            docker rm myapp
-          } catch {
-            echo "No container to remove"
-          }
+          docker rm myapp
+          IF %ERRORLEVEL% NEQ 0 echo No container to remove
 
       - name: Run new container
-        shell: pwsh
-        run: |
+        shell: cmd
+        run: >
           docker run -d -p 3000:3000 --name myapp ${{ secrets.DOCKER_USERNAME }}/devops-app:latest
 
       - name: Show running containers
-        shell: pwsh
+        shell: cmd
         run: docker ps
