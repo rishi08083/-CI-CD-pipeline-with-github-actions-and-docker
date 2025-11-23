@@ -16,25 +16,21 @@ jobs:
 
       - name: Pull latest Docker image
         shell: cmd
-        run: >
-          docker pull ${{ secrets.DOCKER_USERNAME }}/devops-app:latest
+        run: docker pull ${{ secrets.DOCKER_USERNAME }}/devops-app:latest
 
       - name: Stop existing container
         shell: cmd
         run: |
-          docker stop myapp
-          IF %ERRORLEVEL% NEQ 0 echo No running container
+          docker stop myapp || echo "No running container" & exit /B 0
 
-      - name: Remove existing container
+      - name: Remove container
         shell: cmd
         run: |
-          docker rm myapp
-          IF %ERRORLEVEL% NEQ 0 echo No container to remove
+          docker rm myapp || echo "No container to remove" & exit /B 0
 
       - name: Run new container
         shell: cmd
-        run: >
-          docker run -d -p 3000:3000 --name myapp ${{ secrets.DOCKER_USERNAME }}/devops-app:latest
+        run: docker run -d -p 3000:3000 --name myapp ${{ secrets.DOCKER_USERNAME }}/devops-app:latest
 
       - name: Show running containers
         shell: cmd
