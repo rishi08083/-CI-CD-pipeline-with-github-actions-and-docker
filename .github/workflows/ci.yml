@@ -1,4 +1,4 @@
-name: CD - Deploy to Minikube (self-hosted)
+name: CI - Build & Push Docker Image (Self-Hosted)
 
 on:
   workflow_dispatch:
@@ -7,32 +7,24 @@ on:
       - main
 
 jobs:
-  deploy:
-    runs-on: [self-hosted, linux] # ensure this matches your runner labels
+  build:
+    runs-on: [self-hosted, Windows] # change according to your runner labels
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install kubectl
+      - name: Log in to Docker Hub
         run: |
-          # install kubectl if not present
-          if ! command -v kubectl >/dev/null 2>&1; then
-            curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-            chmod +x kubectl
-            sudo mv kubectl /usr/local/bin/
-          fi
-          kubectl version --client
+          docker login -u "${{ secrets.DOCKER_USERNAME }}" -p "${{ secrets.DOCKER_PASSWORD }}"
 
-      - name: Update k8s deployment image
+      - name: Build Docker image
         run: |
-          kubectl set image deployment/myapp-deployment myapp=${{ secrets.DOCKER_USERNAME }}/devops-app:latest --record || true
-          kubectl apply -f k8s/service.yaml || true
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/devops-app:latest .
 
-      - name: Wait for rollout
-        run: kubectl rollout status deployment/myapp-deployment --timeout=120s
+      - name: Push Docker image to Docker Hub
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/devops-app:latest
 
-      - name: Show pods
-        run: kubectl get pods -o wide
-
-      - name: Show service (NodePort)
-        run: kubectl get svc myapp-service -o wide
+      - name: Show Docker images on runner
+        run: docker images
