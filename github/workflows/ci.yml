@@ -1,0 +1,38 @@
+name: CD - Deploy to Minikube (self-hosted)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux] # ensure this matches your runner labels
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install kubectl
+        run: |
+          # install kubectl if not present
+          if ! command -v kubectl >/dev/null 2>&1; then
+            curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+            chmod +x kubectl
+            sudo mv kubectl /usr/local/bin/
+          fi
+          kubectl version --client
+
+      - name: Update k8s deployment image
+        run: |
+          kubectl set image deployment/myapp-deployment myapp=${{ secrets.DOCKER_USERNAME }}/devops-app:latest --record || true
+          kubectl apply -f k8s/service.yaml || true
+
+      - name: Wait for rollout
+        run: kubectl rollout status deployment/myapp-deployment --timeout=120s
+
+      - name: Show pods
+        run: kubectl get pods -o wide
+
+      - name: Show service (NodePort)
+        run: kubectl get svc myapp-service -o wide
